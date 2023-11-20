@@ -3,26 +3,36 @@ import * as puppeteer from "puppeteer"
 import chalk from "chalk"
 import cliProgress from "cli-progress"
 
-async function coletarDados(inicio, fim) {
-    const browser = await puppeteer.launch();
-    process.stdout.write('\x1Bc');
+async function coletarDados(ocorrencias) {
+    const browser = await puppeteer.launch({
+        headless: 'new', //false// Definindo explicitamente o novo modo Headless
+    });
+    //process.stdout.write('\x1Bc');
     const page = await browser.newPage();
 
     // Array para armazenar os resultados
     const resultados = [];
 
+    resultados.push(`#id@CNPJ@decreto@mes@tipo@decOrig`);
+
     const progressBar = new cliProgress.SingleBar({
-        format: chalk.bold.green("Progresso da coleta: ") + chalk.bold.cyan('{bar} {percentage}% ') + chalk.bold.green('| Tempo estimado: {eta}s'),
+        format: chalk.bold.cyan('{bar} {percentage}% ') + chalk.bold.green('| Tempo estimado: {eta}s'),
         barCompleteChar: '\u2588',
         barIncompleteChar: '\u2591',
         hideCursor: true
     });
 
-    //console.log(chalk.magenta(" Progresso"))
+    console.log(chalk.green.bold("Coletando decretos"))
     progressBar.start(100, 0);
-    
 
-    for (let i = inicio; i <= fim; i++) {
+    const inicio = 0
+    const fim = ocorrencias.length - 1
+    const total = fim - inicio
+
+    //for (let i = inicio; i <= fim; i++) {
+    for (let index = 0; index < ocorrencias.length; index++) {
+        let i = ocorrencias[(ocorrencias.length - 1) - index].nextNumber
+        //console.log("Ocorrencia: ", i)
         await page.goto(`https://legis.alepe.pe.gov.br/texto.aspx?id=${i}&tipo=`);
 
         const cnpj = 'CNPJ/MF n';
@@ -75,22 +85,20 @@ async function coletarDados(inicio, fim) {
 
         if (resultadoCNPJ[0]) {
             if (resultadoAlterador[0]) {
-                resultados.push(`#${i}@${resultadoCNPJ[1]}@${resultadoDecretoOriginal[1]}@${resultadoDecretoOriginal[2]}@DecOrig(A)${resultadoAlterador[1]}`);
+                resultados.push(`#${i}@${resultadoCNPJ[1]}@${resultadoDecretoOriginal[1]}@${resultadoDecretoOriginal[2]}@A@${resultadoAlterador[1]}`);
             } else if (resultadoProrrogador[0]) {
-                resultados.push(`#${i}@${resultadoCNPJ[1]}@${resultadoDecretoOriginal[1]}@${resultadoDecretoOriginal[2]}@DecOrig(P)${resultadoProrrogador[1]}`);
+                resultados.push(`#${i}@${resultadoCNPJ[1]}@${resultadoDecretoOriginal[1]}@${resultadoDecretoOriginal[2]}@P@${resultadoProrrogador[1]}`);
             } else if (resultadoRenovador[0]) {
-                resultados.push(`#${i}@${resultadoCNPJ[1]}@${resultadoDecretoOriginal[1]}@${resultadoDecretoOriginal[2]}@DecOrig(R)${resultadoRenovador[1]}`);
+                resultados.push(`#${i}@${resultadoCNPJ[1]}@${resultadoDecretoOriginal[1]}@${resultadoDecretoOriginal[2]}@R@${resultadoRenovador[1]}`);
             } else {
-                resultados.push(`#${i}@${resultadoCNPJ[1]}@${resultadoDecretoOriginal[1]}@${resultadoDecretoOriginal[2]}@DecOrig(C)${resultadoDecretoOriginal[1]}`);
+                resultados.push(`#${i}@${resultadoCNPJ[1]}@${resultadoDecretoOriginal[1]}@${resultadoDecretoOriginal[2]}@C@${resultadoDecretoOriginal[1]}`);
             }
         } else if (resultadoAlterador[0]) {
-            resultados.push(`#${i}@00.000.000/0000-00@${resultadoDecretoOriginal[1]}@${resultadoDecretoOriginal[2]}@DecOrig(A)${resultadoAlterador[1]}`);
+            resultados.push(`#${i}@00.000.000/0000-00@${resultadoDecretoOriginal[1]}@${resultadoDecretoOriginal[2]}@A@${resultadoAlterador[1]}`);
         }
 
-        const total = fim - inicio
-        progressBar.update((((i - inicio) / total) * 100));
+        progressBar.update((((index - inicio) / total) * 100));
         progressBar.updateETA();
-        //console.log(chalk.green((((i - inicio) / total) * 100).toFixed(2) + "%"))
     }
 
     progressBar.stop();
