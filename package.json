@@ -1,7 +1,7 @@
 {
   "name": "alepe-legis-data-colector",
-  "version": "1.1.0",
-  "description": "Coletor de dados do prodepe e proind (decretos, cnpj e concessões)",
+  "version": "1.5.0",
+  "description": "Coletor de dados do Prodepe e Proind (decretos, cnpj, tipo...)",
   "main": "index.js",
   "type": "module",
   "scripts": {

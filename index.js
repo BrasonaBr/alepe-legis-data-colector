@@ -4,6 +4,12 @@ import chalk from "chalk"
 import cliProgress from "cli-progress"
 
 async function coletarDados(ocorrencias) {
+    const inicio = 0
+    const fim = ocorrencias.length - 1
+    const total = fim - inicio
+
+    console.log(chalk.blue(`Número de decretos publicados: ${ocorrencias.length}`))
+
     const browser = await puppeteer.launch({
         headless: 'new', //false// Definindo explicitamente o novo modo Headless
     });
@@ -16,18 +22,14 @@ async function coletarDados(ocorrencias) {
     resultados.push(`#id@CNPJ@decreto@mes@tipo@decOrig`);
 
     const progressBar = new cliProgress.SingleBar({
-        format: chalk.bold.cyan('{bar} {percentage}% ') + chalk.bold.green('| Tempo estimado: {eta}s'),
+        format: chalk.bold.cyan('{bar} {percentage}% ') + chalk.cyan('| Tempo estimado: {eta}s'),
         barCompleteChar: '\u2588',
         barIncompleteChar: '\u2591',
         hideCursor: true
     });
 
-    console.log(chalk.green.bold("Coletando decretos"))
+    console.log(chalk.yellow.bold("Coletando decretos"))
     progressBar.start(100, 0);
-
-    const inicio = 0
-    const fim = ocorrencias.length - 1
-    const total = fim - inicio
 
     //for (let i = inicio; i <= fim; i++) {
     for (let index = 0; index < ocorrencias.length; index++) {
@@ -105,9 +107,11 @@ async function coletarDados(ocorrencias) {
 
     await browser.close();
 
+    console.log(chalk.blue(`Número de decretos Prodepe e Proind: ${resultados.length - 1}`))
+
     try {
         await fs.writeFile('resultados.txt', resultados.join('\n'));
-        console.log(chalk.bold.cyan('\nResultados gravados com sucesso no arquivo resultados.txt'));
+        console.log(chalk.bold.green('\nResultados gravados com sucesso no arquivo resultados.txt'));
     } catch (error) {
         console.error(chalk.red('\nErro ao gravar resultados no arquivo:', error));
     }

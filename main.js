@@ -56,15 +56,6 @@ function searchInFile(filePath, callback) {
                 return b.nextNumber - a.nextNumber;
               });
 
-            for (let i = 0; i < occurrences.length - 1; i++) {
-                if (occurrences[i].nextNumber - occurrences[i + 1].nextNumber > 200) {
-                    if(i/occurrences.length >= 0.9){
-                        occurrences.splice(i + 1, 1);
-                        i--
-                    }
-                }
-            }
-
             // Encontra o maior e o menor número
             const numbers = occurrences.map((occurrence) => occurrence.nextNumber);
             const maxNumber = Math.max(...numbers);
@@ -88,9 +79,9 @@ async function coletarTabela(mes = null, ano = null) {
 
     const maxTentativas = 3
     let tentativa = 0
+    let delay = 1000
 
     while (tentativa < maxTentativas) {
-        const delay = (tentativa) * 500 + 1000
         try {
             await realizarPesquisa(delay, mes, ano)
             // Chama a função de busca
@@ -107,6 +98,7 @@ async function coletarTabela(mes = null, ano = null) {
             }
 
             tentativa++
+            delay *= 1.5
         }
     }
 }
@@ -120,4 +112,3 @@ if (argumentosDoUsuario.length === 1) {
 } else if (argumentosDoUsuario.length === 0) {
     coletarTabela()
 }
-

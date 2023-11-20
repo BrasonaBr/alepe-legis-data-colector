@@ -5,14 +5,19 @@ import cliProgress from "cli-progress"
 
 process.stdout.write('\x1Bc');
 
+console.log(chalk.bgWhite.black.bold("alepe-legis-data-colector version: 1.5.0"))
+console.log(chalk.bgWhite.black.bold("Autor: Eric Gonçalves Albuquerque\n"))
+
 async function realizarPesquisa(delay = 1000, mes = null, ano = null) {
 
     const dataAtual = new Date();
 
+    dataAtual.setMonth(dataAtual.getMonth() - 1);
+
     // Obtenha o ano atual
     const anoAtual = dataAtual.getFullYear();
 
-    const ultimoMes = dataAtual.getMonth();
+    const ultimoMes = dataAtual.getMonth() + 1;
 
     if (mes === null) {
         mes = ultimoMes
@@ -46,25 +51,32 @@ async function realizarPesquisa(delay = 1000, mes = null, ano = null) {
     const page = await browser.newPage();
 
     const progressBar = new cliProgress.SingleBar({
-        format: chalk.bold.cyan('{bar} {percentage}% ') + chalk.bold.green('| Tempo estimado: {eta}s'),
+        format: chalk.bold.cyan('{bar} {percentage}% ') + chalk.cyan('| Tempo estimado: {eta}s'),
         barCompleteChar: '\u2588',
         barIncompleteChar: '\u2591',
         hideCursor: true
     });
 
-    console.log(chalk.green.bold("Coletando tabela"))
+    console.log(chalk.yellow.bold("Coletando tabela"))
     progressBar.start(100, 0);
 
     let etapa = 0
-    const total = 35
+    const total = 17*delay
 
     // URL da página de pesquisa
     const url = 'https://legis.alepe.pe.gov.br/pesquisaAvancada.aspx';
 
     await page.goto(url);
 
-    etapa = 1
     progressBar.update((((etapa) / total) * 100));
+
+    const decretoExecutivoInput = "input#cblTipoNorma_3"
+
+    await page.click(decretoExecutivoInput);
+
+    await page.waitForTimeout(delay / 2);
+
+    etapa += delay / 2
 
     // Seletor da caixa de texto de pesquisa
     const caixaPesquisaSelector = 'insira_seletor_aqui';
@@ -74,34 +86,26 @@ async function realizarPesquisa(delay = 1000, mes = null, ano = null) {
     // Clicar no link
     await page.click(linkSelector);
 
-
-    // Aguarde alguns segundos para garantir que os resultados sejam carregados
-    await page.waitForTimeout();
-
-    etapa = 2
     progressBar.update((((etapa) / total) * 100));
 
     const caixaDataSelectorInicio = 'input#tbxDataInicialPublicacao';
 
     const caixaDataSelectorFim = 'input#tbxDataFinalPublicacao';
 
-    const menuSuspensoSelector = 'select#ddlPublicacao';
-
-    // Selecionar a segunda opção do menu suspenso (índice 1)
-    await page.select(menuSuspensoSelector, 'DOE - Poder Executivo');
     await page.waitForTimeout(delay / 2);
 
-    etapa = 3
+    etapa += delay / 2
+
     progressBar.update((((etapa) / total) * 100));
 
     // Preencher a caixa de texto da data
     await page.type(caixaDataSelectorInicio, dataDesejadaInicio);
     await page.waitForTimeout(delay / 2);
-    etapa = 4
+    etapa += delay / 2
     progressBar.update((((etapa) / total) * 100));
     await page.type(caixaDataSelectorFim, dataDesejadaFim);
     await page.waitForTimeout(delay / 2);
-    etapa = 5
+    etapa += delay / 2
     progressBar.update((((etapa) / total) * 100));
 
     const botaoPesquisarSelector = 'input#btnPesquisar';
@@ -111,7 +115,7 @@ async function realizarPesquisa(delay = 1000, mes = null, ano = null) {
 
     // Aguarde alguns segundos para garantir que a ação seja concluída
     await page.waitForTimeout(delay * 5);
-    etapa = 15
+    etapa += delay * 5
     progressBar.update((((etapa) / total) * 100));
 
     const itensPaginaSelector = 'select#ddlTamPagina'
@@ -129,7 +133,7 @@ async function realizarPesquisa(delay = 1000, mes = null, ano = null) {
     //console.log(chalk.blue(`Quantidade de resultados:${quantidadeResultados}`));
 
     await page.waitForTimeout(delay * 5);
-    etapa = 25
+    etapa += delay * 5
     progressBar.update((((etapa) / total) * 100));
 
     // Obter o código HTML da tabela na primeira página
@@ -151,7 +155,7 @@ async function realizarPesquisa(delay = 1000, mes = null, ano = null) {
 
         // Aguarde alguns segundos para garantir que a ação seja concluída
         await page.waitForTimeout(delay * 5);
-        etapa = 35
+        etapa += delay * 5
         progressBar.update((((etapa) / total) * 100));
 
         // Obter o código HTML da tabela na segunda página
@@ -163,7 +167,7 @@ async function realizarPesquisa(delay = 1000, mes = null, ano = null) {
 
         textoConcatenado = tabelaHtmlPrimeiraPagina + '\n' + tabelaHtmlSegundaPagina;
     } else {
-        etapa = 35
+        etapa += delay * 5
         progressBar.update((((etapa) / total) * 100));
         textoConcatenado = tabelaHtmlPrimeiraPagina
     }
