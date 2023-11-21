@@ -120,14 +120,14 @@ async function coletarDados(ocorrencias) {
     console.log(chalk.blue(`Número de decretos Prodepe e Proind: ${resultados.length - 1}`))
 
     try {
-        await fs.writeFile('resultados.txt', resultados.join('\n'));
+        await fs.writeFile('resultadoTexto.txt', resultados.join('\n'));
         console.log(chalk.bold.green('\nResultados gravados com sucesso no arquivo resultados.txt'));
     } catch (error) {
         console.error(chalk.red('\nErro ao gravar resultados no arquivo:', error));
     }
 
     // Salvar a planilha em um arquivo
-    workbook.xlsx.writeFile('resultados.xlsx')
+    workbook.xlsx.writeFile('resultadoExcel.xlsx')
         .then(() => {
             console.log(chalk.green.bold('Resultados gravados com sucesso no arquivo resultados.xlsx'));
         })
