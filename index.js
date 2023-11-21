@@ -2,6 +2,10 @@ import * as fs from "fs/promises";
 import * as puppeteer from "puppeteer"
 import chalk from "chalk"
 import cliProgress from "cli-progress"
+import ExcelJS from "exceljs"
+
+const workbook = new ExcelJS.Workbook();
+const worksheet = workbook.addWorksheet('Plan 1');
 
 async function coletarDados(ocorrencias) {
     const inicio = 0
@@ -20,6 +24,7 @@ async function coletarDados(ocorrencias) {
     const resultados = [];
 
     resultados.push(`#id@CNPJ@decreto@mes@tipo@decOrig`);
+    worksheet.addRow(['Id', 'CNPJ', 'Decreto', 'Mês', 'Tipo', 'DecOrig']);
 
     const progressBar = new cliProgress.SingleBar({
         format: chalk.bold.cyan('{bar} {percentage}% ') + chalk.cyan('| Tempo estimado: {eta}s'),
@@ -88,15 +93,20 @@ async function coletarDados(ocorrencias) {
         if (resultadoCNPJ[0]) {
             if (resultadoAlterador[0]) {
                 resultados.push(`#${i}@${resultadoCNPJ[1]}@${resultadoDecretoOriginal[1]}@${resultadoDecretoOriginal[2]}@A@${resultadoAlterador[1]}`);
+                worksheet.addRow([i, resultadoCNPJ[1], resultadoDecretoOriginal[1], resultadoDecretoOriginal[2], "A", resultadoAlterador[1]]);
             } else if (resultadoProrrogador[0]) {
                 resultados.push(`#${i}@${resultadoCNPJ[1]}@${resultadoDecretoOriginal[1]}@${resultadoDecretoOriginal[2]}@P@${resultadoProrrogador[1]}`);
+                worksheet.addRow([i, resultadoCNPJ[1], resultadoDecretoOriginal[1], resultadoDecretoOriginal[2], "P", resultadoProrrogador[1]]);
             } else if (resultadoRenovador[0]) {
                 resultados.push(`#${i}@${resultadoCNPJ[1]}@${resultadoDecretoOriginal[1]}@${resultadoDecretoOriginal[2]}@R@${resultadoRenovador[1]}`);
+                worksheet.addRow([i, resultadoCNPJ[1], resultadoDecretoOriginal[1], resultadoDecretoOriginal[2], "R", resultadoRenovador[1]]);
             } else {
                 resultados.push(`#${i}@${resultadoCNPJ[1]}@${resultadoDecretoOriginal[1]}@${resultadoDecretoOriginal[2]}@C@${resultadoDecretoOriginal[1]}`);
+                worksheet.addRow([i, resultadoCNPJ[1], resultadoDecretoOriginal[1], resultadoDecretoOriginal[2], "C", resultadoDecretoOriginal[1]]);
             }
         } else if (resultadoAlterador[0]) {
             resultados.push(`#${i}@00.000.000/0000-00@${resultadoDecretoOriginal[1]}@${resultadoDecretoOriginal[2]}@A@${resultadoAlterador[1]}`);
+            worksheet.addRow([i, '00.000.000/0000-00', resultadoDecretoOriginal[1], resultadoDecretoOriginal[2], "A", resultadoAlterador[1]]);
         }
 
         progressBar.update((((index - inicio) / total) * 100));
@@ -115,6 +125,15 @@ async function coletarDados(ocorrencias) {
     } catch (error) {
         console.error(chalk.red('\nErro ao gravar resultados no arquivo:', error));
     }
+
+    // Salvar a planilha em um arquivo
+    workbook.xlsx.writeFile('resultado.xlsx')
+        .then(() => {
+            console.log(chalk.green('Arquivo Excel gerado com sucesso!'));
+        })
+        .catch((err) => {
+            console.error(chalk.red('Erro ao gerar o arquivo Excel:', err));
+        });
 }
 
 export default coletarDados

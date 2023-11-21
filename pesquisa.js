@@ -3,11 +3,6 @@ import * as fs from 'fs';
 import chalk from "chalk"
 import cliProgress from "cli-progress"
 
-process.stdout.write('\x1Bc');
-
-console.log(chalk.bgWhite.black.bold("alepe-legis-data-colector version: 1.5.0"))
-console.log(chalk.bgWhite.black.bold("Autor: Eric Gonçalves Albuquerque\n"))
-
 async function realizarPesquisa(delay = 1000, mes = null, ano = null) {
 
     const dataAtual = new Date();
