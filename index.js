@@ -15,7 +15,7 @@ async function coletarDados(ocorrencias) {
     console.log(chalk.blue(`Número de decretos publicados: ${ocorrencias.length}`))
 
     const browser = await puppeteer.launch({
-        headless: 'new', //false// Definindo explicitamente o novo modo Headless
+        headless: false, //false// Definindo explicitamente o novo modo Headless
     });
     //process.stdout.write('\x1Bc');
     const page = await browser.newPage();
@@ -36,13 +36,101 @@ async function coletarDados(ocorrencias) {
     console.log(chalk.yellow.bold("Coletando decretos"))
     progressBar.start(100, 0);
 
-    //for (let i = inicio; i <= fim; i++) {
     for (let index = 0; index < ocorrencias.length; index++) {
-        let i = ocorrencias[(ocorrencias.length - 1) - index].nextNumber
-        //console.log("Ocorrencia: ", i)
+        const i = ocorrencias[(ocorrencias.length - 1) - index].nextNumber
+
         await page.goto(`https://legis.alepe.pe.gov.br/texto.aspx?id=${i}&tipo=`);
 
-        const cnpj = 'CNPJ/MF n';
+        const palavras = ['CNPJ/MF n', 'DECRETO N', 'Introduz alterações no Decreto', 'prorrogação do prazo de fruição', 'renovação do prazo de fruição']
+
+        const buscaNaPagina = await page.evaluate((palavras) => {
+            const bodyText = document.body.innerText;
+            const result = palavras.reduce((obj, palavra) => {
+                const indexPalavra = bodyText.indexOf(palavra);
+                let textoSeguinte;
+        
+                if (palavra === 'CNPJ/MF n' || palavra === 'DECRETO N') {
+                    textoSeguinte = bodyText.substring(indexPalavra + palavra.length + 1).split(' ')[1];
+        
+                    if (palavra === 'CNPJ/MF n') {
+                        obj.cnpj = [bodyText.includes(palavra), textoSeguinte];
+                    } else {
+                        const mes = bodyText.substring(indexPalavra + palavra.length).split(' ')[5];
+                        obj.decOrg = [bodyText.includes(palavra), textoSeguinte.slice(0, -1), mes];
+                    }
+                } else {
+                    const n = bodyText.indexOf("Decreto n");
+                    textoSeguinte = bodyText.substring(n + 10).split(' ')[1];
+                    const retorno = [bodyText.includes(palavra), textoSeguinte.slice(0, -1)];
+        
+                    if (palavra === 'Introduz alterações no Decreto') {
+                        obj.alterador = retorno;
+                    } else if (palavra === 'prorrogação do prazo de fruição') {
+                        obj.prorrogador = retorno;
+                    } else {
+                        obj.renovador = retorno;
+                    }
+                }
+        
+                return obj;
+            }, {});
+        
+            return result;
+        }, palavras);
+
+        const cnpj = buscaNaPagina.cnpj
+        const decOrg = buscaNaPagina.decOrg
+        const alterador = buscaNaPagina.alterador
+        const prorrogador = buscaNaPagina.prorrogador
+        const renovador = buscaNaPagina.renovador
+
+        if (cnpj[0]) {
+            if (alterador[0]) {
+                resultados.push(`#${i}@${cnpj[1]}@${decOrg[1]}@${decOrg[2]}@A@${alterador[1]}`);
+                worksheet.addRow([i, cnpj[1], decOrg[1], decOrg[2], "A", alterador[1]]);
+            } else if (prorrogador[0]) {
+                resultados.push(`#${i}@${cnpj[1]}@${decOrg[1]}@${decOrg[2]}@P@${prorrogador[1]}`);
+                worksheet.addRow([i, cnpj[1], decOrg[1], decOrg[2], "P", prorrogador[1]]);
+            } else if (renovador[0]) {
+                resultados.push(`#${i}@${cnpj[1]}@${decOrg[1]}@${decOrg[2]}@R@${renovador[1]}`);
+                worksheet.addRow([i, cnpj[1], decOrg[1], decOrg[2], "R", renovador[1]]);
+            } else {
+                resultados.push(`#${i}@${cnpj[1]}@${decOrg[1]}@${decOrg[2]}@C@${decOrg[1]}`);
+                worksheet.addRow([i, cnpj[1], decOrg[1], decOrg[2], "C", decOrg[1]]);
+            }
+        } else if (alterador[0]) {
+            resultados.push(`#${i}@00.000.000/0000-00@${decOrg[1]}@${decOrg[2]}@A@${alterador[1]}`);
+            worksheet.addRow([i, '00.000.000/0000-00', decOrg[1], decOrg[2], "A", alterador[1]]);
+        }
+
+        progressBar.update((((index - inicio) / total) * 100));
+        progressBar.updateETA();
+    }
+
+    progressBar.stop();
+
+    await browser.close();
+
+    console.log(chalk.blue(`Número de decretos Prodepe e Proind: ${resultados.length - 1}`))
+
+    try {
+        await fs.writeFile('resultadoTexto.txt', resultados.join('\n'));
+        console.log(chalk.bold.green('\nResultados gravados com sucesso no arquivo resultadoTexto.txt'));
+    } catch (error) {
+        console.error(chalk.red('\nErro ao gravar resultados no arquivo:', error));
+    }
+
+    // Salvar a planilha em um arquivo
+    workbook.xlsx.writeFile('resultadoExcel.xlsx')
+        .then(() => {
+            console.log(chalk.green.bold('Resultados gravados com sucesso no arquivo resultadoExcel.xlsx'));
+        })
+        .catch((err) => {
+            console.error(chalk.red('Erro ao gerar o arquivo Excel:', err));
+        });
+}
+
+/*const cnpj = 'CNPJ/MF n';
         const resultadoCNPJ = await page.evaluate((palavra) => {
 
             const bodyText = document.body.innerText;
@@ -88,52 +176,6 @@ async function coletarDados(ocorrencias) {
             const n = bodyText.indexOf("Decreto n");
             const textoSeguinte = bodyText.substring(n + 10).split(' ')[1];
             return [bodyText.includes(palavra), textoSeguinte.slice(0, -1)];
-        }, decretoRenovador);
-
-        if (resultadoCNPJ[0]) {
-            if (resultadoAlterador[0]) {
-                resultados.push(`#${i}@${resultadoCNPJ[1]}@${resultadoDecretoOriginal[1]}@${resultadoDecretoOriginal[2]}@A@${resultadoAlterador[1]}`);
-                worksheet.addRow([i, resultadoCNPJ[1], resultadoDecretoOriginal[1], resultadoDecretoOriginal[2], "A", resultadoAlterador[1]]);
-            } else if (resultadoProrrogador[0]) {
-                resultados.push(`#${i}@${resultadoCNPJ[1]}@${resultadoDecretoOriginal[1]}@${resultadoDecretoOriginal[2]}@P@${resultadoProrrogador[1]}`);
-                worksheet.addRow([i, resultadoCNPJ[1], resultadoDecretoOriginal[1], resultadoDecretoOriginal[2], "P", resultadoProrrogador[1]]);
-            } else if (resultadoRenovador[0]) {
-                resultados.push(`#${i}@${resultadoCNPJ[1]}@${resultadoDecretoOriginal[1]}@${resultadoDecretoOriginal[2]}@R@${resultadoRenovador[1]}`);
-                worksheet.addRow([i, resultadoCNPJ[1], resultadoDecretoOriginal[1], resultadoDecretoOriginal[2], "R", resultadoRenovador[1]]);
-            } else {
-                resultados.push(`#${i}@${resultadoCNPJ[1]}@${resultadoDecretoOriginal[1]}@${resultadoDecretoOriginal[2]}@C@${resultadoDecretoOriginal[1]}`);
-                worksheet.addRow([i, resultadoCNPJ[1], resultadoDecretoOriginal[1], resultadoDecretoOriginal[2], "C", resultadoDecretoOriginal[1]]);
-            }
-        } else if (resultadoAlterador[0]) {
-            resultados.push(`#${i}@00.000.000/0000-00@${resultadoDecretoOriginal[1]}@${resultadoDecretoOriginal[2]}@A@${resultadoAlterador[1]}`);
-            worksheet.addRow([i, '00.000.000/0000-00', resultadoDecretoOriginal[1], resultadoDecretoOriginal[2], "A", resultadoAlterador[1]]);
-        }
-
-        progressBar.update((((index - inicio) / total) * 100));
-        progressBar.updateETA();
-    }
-
-    progressBar.stop();
-
-    await browser.close();
-
-    console.log(chalk.blue(`Número de decretos Prodepe e Proind: ${resultados.length - 1}`))
-
-    try {
-        await fs.writeFile('resultadoTexto.txt', resultados.join('\n'));
-        console.log(chalk.bold.green('\nResultados gravados com sucesso no arquivo resultadoTexto.txt'));
-    } catch (error) {
-        console.error(chalk.red('\nErro ao gravar resultados no arquivo:', error));
-    }
-
-    // Salvar a planilha em um arquivo
-    workbook.xlsx.writeFile('resultadoExcel.xlsx')
-        .then(() => {
-            console.log(chalk.green.bold('Resultados gravados com sucesso no arquivo resultadoExcel.xlsx'));
-        })
-        .catch((err) => {
-            console.error(chalk.red('Erro ao gerar o arquivo Excel:', err));
-        });
-}
+        }, decretoRenovador);*/
 
 export default coletarDados
