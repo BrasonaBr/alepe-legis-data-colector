@@ -121,7 +121,7 @@ async function coletarDados(ocorrencias) {
 
     try {
         await fs.writeFile('resultadoTexto.txt', resultados.join('\n'));
-        console.log(chalk.bold.green('\nResultados gravados com sucesso no arquivo resultados.txt'));
+        console.log(chalk.bold.green('\nResultados gravados com sucesso no arquivo resultadoTexto.txt'));
     } catch (error) {
         console.error(chalk.red('\nErro ao gravar resultados no arquivo:', error));
     }
@@ -129,7 +129,7 @@ async function coletarDados(ocorrencias) {
     // Salvar a planilha em um arquivo
     workbook.xlsx.writeFile('resultadoExcel.xlsx')
         .then(() => {
-            console.log(chalk.green.bold('Resultados gravados com sucesso no arquivo resultados.xlsx'));
+            console.log(chalk.green.bold('Resultados gravados com sucesso no arquivo resultadoExcel.xlsx'));
         })
         .catch((err) => {
             console.error(chalk.red('Erro ao gerar o arquivo Excel:', err));
