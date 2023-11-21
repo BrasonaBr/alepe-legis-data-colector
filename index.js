@@ -127,9 +127,9 @@ async function coletarDados(ocorrencias) {
     }
 
     // Salvar a planilha em um arquivo
-    workbook.xlsx.writeFile('resultado.xlsx')
+    workbook.xlsx.writeFile('resultados.xlsx')
         .then(() => {
-            console.log(chalk.green('Arquivo Excel gerado com sucesso!'));
+            console.log(chalk.green.bold('Resultados gravados com sucesso no arquivo resultados.xlsx'));
         })
         .catch((err) => {
             console.error(chalk.red('Erro ao gerar o arquivo Excel:', err));

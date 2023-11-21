@@ -4,7 +4,7 @@ import realizarPesquisa from "./pesquisa.js"
 import searchInFile from "./searchInFile.js"
 
 // Substitua 'caminho/do/seu/arquivo.txt' pelo caminho real do seu arquivo TXT
-const filePath = './tabela.txt';
+const filePath = './internal_table.txt';
 
 
 async function coletarTabela(mes = null, ano = null) {

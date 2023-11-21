@@ -168,7 +168,7 @@ async function realizarPesquisa(delay = 1000, mes = null, ano = null) {
     }
 
     // Gravar o texto concatenado em um arquivo .txt
-    fs.writeFileSync('tabela.txt', textoConcatenado);
+    fs.writeFileSync('internal_table.txt', textoConcatenado);
 
     // Feche o navegador
     progressBar.stop();
