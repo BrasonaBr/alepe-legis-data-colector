@@ -175,6 +175,4 @@ async function realizarPesquisa(delay = 1000, mes = null, ano = null) {
     await browser.close();
 }
 
-//realizarPesquisa();
-
 export default realizarPesquisa

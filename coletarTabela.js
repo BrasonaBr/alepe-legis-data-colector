@@ -7,7 +7,7 @@ import searchInFile from "./searchInFile.js"
 const filePath = './internal_table.txt';
 
 
-async function coletarTabela(mes = null, ano = null) {
+async function coletarTabela(mes = null, ano = null, multi) {
 
     const maxTentativas = 3
     let tentativa = 0
@@ -18,7 +18,7 @@ async function coletarTabela(mes = null, ano = null) {
             await realizarPesquisa(delay, mes, ano)
             // Chama a função de busca
             searchInFile(filePath, (result) => {
-                coletarDados(result);
+                coletarDados(result, multi);
             });
             break
         } catch (error) {
