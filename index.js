@@ -33,8 +33,68 @@ async function coletarDados(ocorrencias, multi = false) {
         hideCursor: true
     });
 
-    if (multi) {
+    function escreverArquivo(i, cnpj, decOrg, alterador, prorrogador, renovador) {
+        if (cnpj[0]) {
+            if (alterador[0]) {
+                resultados.push(`#${i}@${cnpj[1]}@${decOrg[1]}@${decOrg[2]}@A@${alterador[1]}`);
+                worksheet.addRow([i, cnpj[1], decOrg[1], decOrg[2], "A", alterador[1]]);
+            } else if (prorrogador[0]) {
+                resultados.push(`#${i}@${cnpj[1]}@${decOrg[1]}@${decOrg[2]}@P@${prorrogador[1]}`);
+                worksheet.addRow([i, cnpj[1], decOrg[1], decOrg[2], "P", prorrogador[1]]);
+            } else if (renovador[0]) {
+                resultados.push(`#${i}@${cnpj[1]}@${decOrg[1]}@${decOrg[2]}@R@${renovador[1]}`);
+                worksheet.addRow([i, cnpj[1], decOrg[1], decOrg[2], "R", renovador[1]]);
+            } else {
+                resultados.push(`#${i}@${cnpj[1]}@${decOrg[1]}@${decOrg[2]}@C@${decOrg[1]}`);
+                worksheet.addRow([i, cnpj[1], decOrg[1], decOrg[2], "C", decOrg[1]]);
+            }
+        } else if (alterador[0]) {
+            resultados.push(`#${i}@00.000.000/0000-00@${decOrg[1]}@${decOrg[2]}@A@${alterador[1]}`);
+            worksheet.addRow([i, '00.000.000/0000-00', decOrg[1], decOrg[2], "A", alterador[1]]);
+        }
+    }
 
+    async function buscarNaPagina(page) {
+        const palavras = ['CNPJ/MF n', 'DECRETO N', 'Introduz alterações no Decreto', 'prorrogação do prazo de fruição', 'renovação do prazo de fruição'];
+
+        return await page.evaluate((palavras) => {
+            const bodyText = document.body.innerText;
+            const result = palavras.reduce((obj, palavra) => {
+                const indexPalavra = bodyText.indexOf(palavra);
+                let textoSeguinte;
+
+                if (palavra === 'CNPJ/MF n' || palavra === 'DECRETO N') {
+                    textoSeguinte = bodyText.substring(indexPalavra + palavra.length + 1).split(' ')[1];
+
+                    if (palavra === 'CNPJ/MF n') {
+                        obj.cnpj = [bodyText.includes(palavra), textoSeguinte];
+                    } else {
+                        const mes = bodyText.substring(indexPalavra + palavra.length).split(' ')[5];
+                        obj.decOrg = [bodyText.includes(palavra), textoSeguinte.slice(0, -1), mes];
+                    }
+                } else {
+                    const n = bodyText.indexOf("Decreto n");
+                    textoSeguinte = bodyText.substring(n + 10).split(' ')[1];
+                    const retorno = [bodyText.includes(palavra), textoSeguinte.slice(0, -1)];
+
+                    if (palavra === 'Introduz alterações no Decreto') {
+                        obj.alterador = retorno;
+                    } else if (palavra === 'prorrogação do prazo de fruição') {
+                        obj.prorrogador = retorno;
+                    } else {
+                        obj.renovador = retorno;
+                    }
+                }
+
+                return obj;
+            }, {});
+
+            return result;
+        }, palavras);
+    }
+
+    if (multi) {
+        console.log(chalk.bgRgb(105, 0, 255).bold("Modo de multiprocessamento"))
         const promises = ocorrencias.map(async (ocorrencia) => {
 
             const i = ocorrencia.nextNumber;
@@ -46,68 +106,9 @@ async function coletarDados(ocorrencias, multi = false) {
 
             await page.goto(url, { timeout: 120000 });
 
-            const palavras = ['CNPJ/MF n', 'DECRETO N', 'Introduz alterações no Decreto', 'prorrogação do prazo de fruição', 'renovação do prazo de fruição']
+            const buscaNaPagina = await buscarNaPagina(page);
 
-            const buscaNaPagina = await page.evaluate((palavras) => {
-                const bodyText = document.body.innerText;
-                const result = palavras.reduce((obj, palavra) => {
-                    const indexPalavra = bodyText.indexOf(palavra);
-                    let textoSeguinte;
-
-                    if (palavra === 'CNPJ/MF n' || palavra === 'DECRETO N') {
-                        textoSeguinte = bodyText.substring(indexPalavra + palavra.length + 1).split(' ')[1];
-
-                        if (palavra === 'CNPJ/MF n') {
-                            obj.cnpj = [bodyText.includes(palavra), textoSeguinte];
-                        } else {
-                            const mes = bodyText.substring(indexPalavra + palavra.length).split(' ')[5];
-                            obj.decOrg = [bodyText.includes(palavra), textoSeguinte.slice(0, -1), mes];
-                        }
-                    } else {
-                        const n = bodyText.indexOf("Decreto n");
-                        textoSeguinte = bodyText.substring(n + 10).split(' ')[1];
-                        const retorno = [bodyText.includes(palavra), textoSeguinte.slice(0, -1)];
-
-                        if (palavra === 'Introduz alterações no Decreto') {
-                            obj.alterador = retorno;
-                        } else if (palavra === 'prorrogação do prazo de fruição') {
-                            obj.prorrogador = retorno;
-                        } else {
-                            obj.renovador = retorno;
-                        }
-                    }
-
-                    return obj;
-                }, {});
-
-                return result;
-            }, palavras);
-
-            const cnpj = buscaNaPagina.cnpj
-            const decOrg = buscaNaPagina.decOrg
-            const alterador = buscaNaPagina.alterador
-            const prorrogador = buscaNaPagina.prorrogador
-            const renovador = buscaNaPagina.renovador
-
-            if (cnpj[0]) {
-                if (alterador[0]) {
-                    resultados.push(`#${i}@${cnpj[1]}@${decOrg[1]}@${decOrg[2]}@A@${alterador[1]}`);
-                    worksheet.addRow([i, cnpj[1], decOrg[1], decOrg[2], "A", alterador[1]]);
-                } else if (prorrogador[0]) {
-                    resultados.push(`#${i}@${cnpj[1]}@${decOrg[1]}@${decOrg[2]}@P@${prorrogador[1]}`);
-                    worksheet.addRow([i, cnpj[1], decOrg[1], decOrg[2], "P", prorrogador[1]]);
-                } else if (renovador[0]) {
-                    resultados.push(`#${i}@${cnpj[1]}@${decOrg[1]}@${decOrg[2]}@R@${renovador[1]}`);
-                    worksheet.addRow([i, cnpj[1], decOrg[1], decOrg[2], "R", renovador[1]]);
-                } else {
-                    resultados.push(`#${i}@${cnpj[1]}@${decOrg[1]}@${decOrg[2]}@C@${decOrg[1]}`);
-                    worksheet.addRow([i, cnpj[1], decOrg[1], decOrg[2], "C", decOrg[1]]);
-                }
-            } else if (alterador[0]) {
-                resultados.push(`#${i}@00.000.000/0000-00@${decOrg[1]}@${decOrg[2]}@A@${alterador[1]}`);
-                worksheet.addRow([i, '00.000.000/0000-00', decOrg[1], decOrg[2], "A", alterador[1]]);
-            }
-
+            escreverArquivo(i, buscaNaPagina.cnpj, buscaNaPagina.decOrg, buscaNaPagina.alterador, buscaNaPagina.prorrogador, buscaNaPagina.renovador)
 
             // Fechar a página e o contexto após a conclusão
             await page.close();
@@ -140,67 +141,9 @@ async function coletarDados(ocorrencias, multi = false) {
 
             await page.goto(`https://legis.alepe.pe.gov.br/texto.aspx?id=${i}&tipo=`);
 
-            const palavras = ['CNPJ/MF n', 'DECRETO N', 'Introduz alterações no Decreto', 'prorrogação do prazo de fruição', 'renovação do prazo de fruição']
+            const buscaNaPagina = await buscarNaPagina(page);
 
-            const buscaNaPagina = await page.evaluate((palavras) => {
-                const bodyText = document.body.innerText;
-                const result = palavras.reduce((obj, palavra) => {
-                    const indexPalavra = bodyText.indexOf(palavra);
-                    let textoSeguinte;
-
-                    if (palavra === 'CNPJ/MF n' || palavra === 'DECRETO N') {
-                        textoSeguinte = bodyText.substring(indexPalavra + palavra.length + 1).split(' ')[1];
-
-                        if (palavra === 'CNPJ/MF n') {
-                            obj.cnpj = [bodyText.includes(palavra), textoSeguinte];
-                        } else {
-                            const mes = bodyText.substring(indexPalavra + palavra.length).split(' ')[5];
-                            obj.decOrg = [bodyText.includes(palavra), textoSeguinte.slice(0, -1), mes];
-                        }
-                    } else {
-                        const n = bodyText.indexOf("Decreto n");
-                        textoSeguinte = bodyText.substring(n + 10).split(' ')[1];
-                        const retorno = [bodyText.includes(palavra), textoSeguinte.slice(0, -1)];
-
-                        if (palavra === 'Introduz alterações no Decreto') {
-                            obj.alterador = retorno;
-                        } else if (palavra === 'prorrogação do prazo de fruição') {
-                            obj.prorrogador = retorno;
-                        } else {
-                            obj.renovador = retorno;
-                        }
-                    }
-
-                    return obj;
-                }, {});
-
-                return result;
-            }, palavras);
-
-            const cnpj = buscaNaPagina.cnpj
-            const decOrg = buscaNaPagina.decOrg
-            const alterador = buscaNaPagina.alterador
-            const prorrogador = buscaNaPagina.prorrogador
-            const renovador = buscaNaPagina.renovador
-
-            if (cnpj[0]) {
-                if (alterador[0]) {
-                    resultados.push(`#${i}@${cnpj[1]}@${decOrg[1]}@${decOrg[2]}@A@${alterador[1]}`);
-                    worksheet.addRow([i, cnpj[1], decOrg[1], decOrg[2], "A", alterador[1]]);
-                } else if (prorrogador[0]) {
-                    resultados.push(`#${i}@${cnpj[1]}@${decOrg[1]}@${decOrg[2]}@P@${prorrogador[1]}`);
-                    worksheet.addRow([i, cnpj[1], decOrg[1], decOrg[2], "P", prorrogador[1]]);
-                } else if (renovador[0]) {
-                    resultados.push(`#${i}@${cnpj[1]}@${decOrg[1]}@${decOrg[2]}@R@${renovador[1]}`);
-                    worksheet.addRow([i, cnpj[1], decOrg[1], decOrg[2], "R", renovador[1]]);
-                } else {
-                    resultados.push(`#${i}@${cnpj[1]}@${decOrg[1]}@${decOrg[2]}@C@${decOrg[1]}`);
-                    worksheet.addRow([i, cnpj[1], decOrg[1], decOrg[2], "C", decOrg[1]]);
-                }
-            } else if (alterador[0]) {
-                resultados.push(`#${i}@00.000.000/0000-00@${decOrg[1]}@${decOrg[2]}@A@${alterador[1]}`);
-                worksheet.addRow([i, '00.000.000/0000-00', decOrg[1], decOrg[2], "A", alterador[1]]);
-            }
+            escreverArquivo(i, buscaNaPagina.cnpj, buscaNaPagina.decOrg, buscaNaPagina.alterador, buscaNaPagina.prorrogador, buscaNaPagina.renovador)
 
             progressBar.update((((index - inicio) / total) * 100));
             progressBar.updateETA();
@@ -228,53 +171,5 @@ async function coletarDados(ocorrencias, multi = false) {
             console.error(chalk.red('Erro ao gerar o arquivo Excel:', err));
         });
 }
-
-/*const cnpj = 'CNPJ/MF n';
-        const resultadoCNPJ = await page.evaluate((palavra) => {
-
-            const bodyText = document.body.innerText;
-            const indexPalavra = bodyText.indexOf(palavra);
-            const textoSeguinte = bodyText.substring(indexPalavra + palavra.length + 1).split(' ')[1];
-            return [bodyText.includes(palavra), textoSeguinte];
-        }, cnpj);
-
-        const decretoOriginal = 'DECRETO N';
-        const resultadoDecretoOriginal = await page.evaluate((palavra) => {
-            const bodyText = document.body.innerText;
-            const indexPalavra = bodyText.indexOf(palavra);
-            const textoSeguinte = bodyText.substring(indexPalavra + palavra.length + 1).split(' ')[1];
-            const mes = bodyText.substring(indexPalavra + palavra.length).split(' ')[5];
-            return [bodyText.includes(palavra), textoSeguinte.slice(0, -1), mes];
-        }, decretoOriginal);
-
-        const decretoAlterador = 'Introduz alterações no Decreto';
-        const resultadoAlterador = await page.evaluate((palavra) => {
-
-            const bodyText = document.body.innerText;
-            const indexPalavra = bodyText.indexOf(palavra);
-            const n = bodyText.indexOf("Decreto n");
-            const textoSeguinte = bodyText.substring(n + 10).split(' ')[1];
-            return [bodyText.includes(palavra), textoSeguinte.slice(0, -1)];
-        }, decretoAlterador);
-
-        const decretoProrrogador = 'prorrogação do prazo de fruição';
-        const resultadoProrrogador = await page.evaluate((palavra) => {
-
-            const bodyText = document.body.innerText;
-            const indexPalavra = bodyText.indexOf(palavra);
-            const n = bodyText.indexOf("Decreto n");
-            const textoSeguinte = bodyText.substring(n + 10).split(' ')[1];
-            return [bodyText.includes(palavra), textoSeguinte.slice(0, -1)];
-        }, decretoProrrogador);
-
-        const decretoRenovador = 'renovação do prazo de fruição';
-        const resultadoRenovador = await page.evaluate((palavra) => {
-
-            const bodyText = document.body.innerText;
-            const indexPalavra = bodyText.indexOf(palavra);
-            const n = bodyText.indexOf("Decreto n");
-            const textoSeguinte = bodyText.substring(n + 10).split(' ')[1];
-            return [bodyText.includes(palavra), textoSeguinte.slice(0, -1)];
-        }, decretoRenovador);*/
 
 export default coletarDados
