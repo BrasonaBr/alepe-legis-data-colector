@@ -7,7 +7,7 @@ import ExcelJS from "exceljs"
 const workbook = new ExcelJS.Workbook();
 const worksheet = workbook.addWorksheet('Plan 1');
 
-async function coletarDados(ocorrencias, multi = false) {
+async function coletarDados(ocorrencias, multi = false, batchSize = 15) {
     const inicio = 0
     const fim = ocorrencias.length - 1
     const total = fim - inicio
@@ -56,7 +56,48 @@ async function coletarDados(ocorrencias, multi = false) {
                         obj.cnpj = [palavraInclusa, textoSeguinte];
                     } else {
                         const mes = bodyText.substring(indexPalavra + palavra.length).split(' ')[5];
-                        obj.decOrg = [palavraInclusa, textoSeguinte.slice(0, -1), mes];
+
+                        let mesNum = '??'; // Default value in case the input is not recognized
+
+                        switch (mes) {
+                            case 'JANEIRO':
+                                mesNum = "01";
+                                break;
+                            case 'FEVEREIRO':
+                                mesNum = "02";
+                                break;
+                            case 'MARÇO':
+                                mesNum = "03";
+                                break;
+                            case 'ABRIL':
+                                mesNum = "04";
+                                break;
+                            case 'MAIO':
+                                mesNum = "05";
+                                break;
+                            case 'JUNHO':
+                                mesNum = "06";
+                                break;
+                            case 'JULHO':
+                                mesNum = "07";
+                                break;
+                            case 'AGOSTO':
+                                mesNum = "08";
+                                break;
+                            case 'SETEMBRO':
+                                mesNum = "09";
+                                break;
+                            case 'OUTUBRO':
+                                mesNum = "10";
+                                break;
+                            case 'NOVEMBRO':
+                                mesNum = "11";
+                                break;
+                            case 'DEZEMBRO':
+                                mesNum = "12";
+                        }
+
+                        obj.decOrg = [palavraInclusa, textoSeguinte.slice(0, -1), mesNum];
                     }
                 } else {
                     const n = bodyText.indexOf("Decreto n");
@@ -102,44 +143,49 @@ async function coletarDados(ocorrencias, multi = false) {
 
 
     if (multi) {
-        console.log(chalk.bgRgb(105, 0, 255).bold("Modo de multiprocessamento"))
-        const promises = ocorrencias.map(async (ocorrencia) => {
+        console.log(chalk.bgRgb(105, 0, 255).bold("Modo de multiprocessamento"));
 
-            const i = ocorrencia.nextNumber;
-            const url = `https://legis.alepe.pe.gov.br/texto.aspx?id=${i}&tipo=`;
+        const totalBatches = Math.ceil(ocorrencias.length / batchSize);
 
-            // Criar um novo contexto para cada página
-            const context = await browser.createIncognitoBrowserContext();
-            const page = await context.newPage();
-
-            await page.goto(url, { timeout: 120000 });
-
-            const buscaNaPagina = await buscarNaPagina(page);
-
-            escreverArquivo(i, buscaNaPagina.cnpj, buscaNaPagina.decOrg, buscaNaPagina.alterador, buscaNaPagina.prorrogador, buscaNaPagina.renovador, buscaNaPagina.programa)
-
-            // Fechar a página e o contexto após a conclusão
-            await page.close();
-            await context.close();
-        });
-
-        console.log(chalk.yellow.bold("Coletando decretos"))
+        console.log(chalk.yellow.bold("Coletando decretos"));
         progressBar.start(100, 0);
 
-        let progressoBarra = 0
+        let progressoBarra = 0;
 
-        // Aguardar todas as promessas serem resolvidas antes de prosseguir
-        await Promise.all(promises.map(promise =>
-            promise.then(() => {
-                progressoBarra++
-                progressBar.update((((progressoBarra - inicio) / total) * 100));
-                progressBar.updateETA();
-            }).catch(error => {
-                console.error('Promessa falhou:', error);
-                // faz qualquer coisa que você precisa com a promessa rejeitada
-            })
-        ))
-        progressBar.stop()
+        for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+            const batchStart = batchIndex * batchSize;
+            const batchEnd = Math.min((batchIndex + 1) * batchSize, ocorrencias.length);
+            const batchPromises = ocorrencias.slice(batchStart, batchEnd).map(async (ocorrencia) => {
+                const i = ocorrencia.nextNumber;
+                const url = `https://legis.alepe.pe.gov.br/texto.aspx?id=${i}&tipo=`;
+
+                const context = await browser.createIncognitoBrowserContext();
+                const page = await context.newPage();
+
+                await page.goto(url, { timeout: 120000 });
+
+                const buscaNaPagina = await buscarNaPagina(page);
+
+                escreverArquivo(i, buscaNaPagina.cnpj, buscaNaPagina.decOrg, buscaNaPagina.alterador, buscaNaPagina.prorrogador, buscaNaPagina.renovador, buscaNaPagina.programa);
+
+                await page.close();
+                await context.close();
+            });
+
+            // Aguardar a resolução do lote atual antes de prosseguir
+            await Promise.all(batchPromises.map((promise, index) =>
+                promise.then(() => {
+                    progressoBarra++;
+                    progressBar.update((((progressoBarra - inicio) / total) * 100));
+                    progressBar.updateETA();
+                }).catch(error => {
+                    console.error(`Promessa ${batchStart + index} falhou:`, error);
+                    // faça qualquer coisa que você precisa com a promessa rejeitada
+                })
+            ));
+        }
+
+        progressBar.stop();
     } else {
         console.log(chalk.yellow.bold("Coletando decretos"))
         progressBar.start(100, 0);
