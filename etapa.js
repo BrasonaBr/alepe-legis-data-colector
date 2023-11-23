@@ -27,12 +27,14 @@ async function main(mes = null, ano = null, multi = false, palavraChave) {
                 searchInFile(filePath, (result) => {
                     coletarProdutos(result, palavraChave);
                 });
+                break
             } else {
                 await realizarPesquisa(delay, mes, ano)
                 // Chama a função de busca
                 searchInFile(filePath, (result) => {
                     coletarDados(result, multi);
                 });
+                break
             }
         } catch (error) {
             if (tentativa < maxTentativas - 1) {
