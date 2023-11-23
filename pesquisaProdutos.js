@@ -118,23 +118,24 @@ async function pesquisaProdutos(delay = 1500, palavraChave) {
                 progressBar.update((((paginaAtual) / numPaginas) * 100));
                 await addHTML(paginaAtual)
 
-                 if (paginaAtual < numPaginas) {
-                        if (j < 5) {
-                            clicarBotaoPag(j + 1)
-                        } else if (j === 5) {
-                            clicarProxIntervalo()
-                        }
+                if (paginaAtual < numPaginas) {
+                    if (j < 5) {
+                        clicarBotaoPag(j + 1)
+                    } else if (j === 5) {
+                        clicarProxIntervalo()
                     }
                 }
-                await page.waitForTimeout(delay * 5);
             }
+            await page.waitForTimeout(delay * 5);
         }
+    }
+
+    progressBar.stop();
 
     // Gravar o texto concatenado em um arquivo .txt
     fs.writeFileSync('internal_table.txt', textoConcatenado);
 
     // Feche o navegador
-    progressBar.stop();
     await browser.close();
 }
 
