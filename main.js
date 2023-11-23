@@ -26,6 +26,7 @@ function start() {
 
     if(argumentosDoUsuario[0] === 'p'){
         palavraChave = argumentosDoUsuario[1].replace(/-/g, " ")
+        ano = argumentosDoUsuario[2]
         main(mes, ano, multi, palavraChave, batchSize)
         return 
     } else if (argumentosDoUsuario[0] === 'mp'){
