@@ -9,7 +9,7 @@ import coletarProdutos from "./webScraperProdutos.js"
 const filePath = './internal_table.txt';
 
 
-async function main(mes = null, ano = null, multi = false, palavraChave, batchSize = 15) {
+async function main(mes, ano, multi, palavraChave, batchSize) {
 
     const maxTentativas = 3
     let tentativa = 0

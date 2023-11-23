@@ -54,7 +54,7 @@ function start() {
         if (argumentosDoUsuario[2] === 'm') {
             multi = true
         }
-        main(mes, ano, multi, batchSize)
+        main(mes, ano, multi, palavraChave, batchSize)
     } 
 }
 
