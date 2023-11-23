@@ -73,9 +73,6 @@ async function realizarPesquisa(delay = 1000, mes = null, ano = null) {
 
     etapa += delay / 2
 
-    // Seletor da caixa de texto de pesquisa
-    const caixaPesquisaSelector = 'insira_seletor_aqui';
-
     const linkSelector = 'li#li-publicacao a.li-pa';
 
     // Clicar no link
@@ -131,12 +128,16 @@ async function realizarPesquisa(delay = 1000, mes = null, ano = null) {
     etapa += delay * 5
     progressBar.update((((etapa) / total) * 100));
 
+    async function coletarHTML(){
+        return await page.evaluate(() => {
+            const tabelaSelector = 'table.table.table-hover.table-responsive';
+            const tabela = document.querySelector(tabelaSelector);
+            return tabela.outerHTML;
+        });
+    }
+
     // Obter o código HTML da tabela na primeira página
-    const tabelaHtmlPrimeiraPagina = await page.evaluate(() => {
-        const tabelaSelector = 'table.table.table-hover.table-responsive';
-        const tabela = document.querySelector(tabelaSelector);
-        return tabela.outerHTML;
-    });
+    const tabelaHtmlPrimeiraPagina = await coletarHTML()
 
     //console.log(chalk.green("Tabela na primeira página carregada"));
 
@@ -154,11 +155,7 @@ async function realizarPesquisa(delay = 1000, mes = null, ano = null) {
         progressBar.update((((etapa) / total) * 100));
 
         // Obter o código HTML da tabela na segunda página
-        const tabelaHtmlSegundaPagina = await page.evaluate(() => {
-            const tabelaSelector = 'table.table.table-hover.table-responsive';
-            const tabela = document.querySelector(tabelaSelector);
-            return tabela.outerHTML;
-        });
+        const tabelaHtmlSegundaPagina = await coletarHTML()
 
         textoConcatenado = tabelaHtmlPrimeiraPagina + '\n' + tabelaHtmlSegundaPagina;
     } else {

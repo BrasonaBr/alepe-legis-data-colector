@@ -23,8 +23,8 @@ async function coletarDados(ocorrencias, multi = false) {
     // Array para armazenar os resultados
     const resultados = [];
 
-    resultados.push(`#id@CNPJ@decreto@mes@tipo@decOrig`);
-    worksheet.addRow(['Id', 'CNPJ', 'Decreto', 'Mês', 'Tipo', 'DecOrig']);
+    resultados.push(`#Id@CNPJ@Decreto@Mês@Tipo@DecOrig@Programa`);
+    worksheet.addRow(['Id', 'CNPJ', 'Decreto', 'Mês', 'Tipo', 'DecOrig', 'Programa']);
 
     const progressBar = new cliProgress.SingleBar({
         format: chalk.bold.cyan('{bar} {percentage}% ') + chalk.cyan('| Tempo estimado: {eta}s'),
@@ -33,49 +33,35 @@ async function coletarDados(ocorrencias, multi = false) {
         hideCursor: true
     });
 
-    function escreverArquivo(i, cnpj, decOrg, alterador, prorrogador, renovador) {
-        if (cnpj[0]) {
-            if (alterador[0]) {
-                resultados.push(`#${i}@${cnpj[1]}@${decOrg[1]}@${decOrg[2]}@A@${alterador[1]}`);
-                worksheet.addRow([i, cnpj[1], decOrg[1], decOrg[2], "A", alterador[1]]);
-            } else if (prorrogador[0]) {
-                resultados.push(`#${i}@${cnpj[1]}@${decOrg[1]}@${decOrg[2]}@P@${prorrogador[1]}`);
-                worksheet.addRow([i, cnpj[1], decOrg[1], decOrg[2], "P", prorrogador[1]]);
-            } else if (renovador[0]) {
-                resultados.push(`#${i}@${cnpj[1]}@${decOrg[1]}@${decOrg[2]}@R@${renovador[1]}`);
-                worksheet.addRow([i, cnpj[1], decOrg[1], decOrg[2], "R", renovador[1]]);
-            } else {
-                resultados.push(`#${i}@${cnpj[1]}@${decOrg[1]}@${decOrg[2]}@C@${decOrg[1]}`);
-                worksheet.addRow([i, cnpj[1], decOrg[1], decOrg[2], "C", decOrg[1]]);
-            }
-        } else if (alterador[0]) {
-            resultados.push(`#${i}@00.000.000/0000-00@${decOrg[1]}@${decOrg[2]}@A@${alterador[1]}`);
-            worksheet.addRow([i, '00.000.000/0000-00', decOrg[1], decOrg[2], "A", alterador[1]]);
-        }
-    }
-
     async function buscarNaPagina(page) {
-        const palavras = ['CNPJ/MF n', 'DECRETO N', 'Introduz alterações no Decreto', 'prorrogação do prazo de fruição', 'renovação do prazo de fruição'];
+        const palavras = ['CNPJ/MF n', 'DECRETO N', 'Introduz alterações no Decreto', 'prorrogação do prazo de fruição', 'renovação do prazo de fruição', "PRODEPE", "PROIND"];
 
         return await page.evaluate((palavras) => {
             const bodyText = document.body.innerText;
             const result = palavras.reduce((obj, palavra) => {
                 const indexPalavra = bodyText.indexOf(palavra);
+                const palavraInclusa = bodyText.includes(palavra)
                 let textoSeguinte;
+
+                if (palavra === "PRODEPE" && palavraInclusa) {
+                    obj.programa = palavra
+                } else if (palavra === "PROIND" && palavraInclusa) {
+                    obj.programa = palavra
+                }
 
                 if (palavra === 'CNPJ/MF n' || palavra === 'DECRETO N') {
                     textoSeguinte = bodyText.substring(indexPalavra + palavra.length + 1).split(' ')[1];
 
                     if (palavra === 'CNPJ/MF n') {
-                        obj.cnpj = [bodyText.includes(palavra), textoSeguinte];
+                        obj.cnpj = [palavraInclusa, textoSeguinte];
                     } else {
                         const mes = bodyText.substring(indexPalavra + palavra.length).split(' ')[5];
-                        obj.decOrg = [bodyText.includes(palavra), textoSeguinte.slice(0, -1), mes];
+                        obj.decOrg = [palavraInclusa, textoSeguinte.slice(0, -1), mes];
                     }
                 } else {
                     const n = bodyText.indexOf("Decreto n");
                     textoSeguinte = bodyText.substring(n + 10).split(' ')[1];
-                    const retorno = [bodyText.includes(palavra), textoSeguinte.slice(0, -1)];
+                    const retorno = [palavraInclusa, textoSeguinte.slice(0, -1)];
 
                     if (palavra === 'Introduz alterações no Decreto') {
                         obj.alterador = retorno;
@@ -93,6 +79,28 @@ async function coletarDados(ocorrencias, multi = false) {
         }, palavras);
     }
 
+    function escreverArquivo(i, cnpj, decOrg, alterador, prorrogador, renovador, programa) {
+        if (cnpj[0]) {
+            if (alterador[0]) {
+                resultados.push(`#${i}@${cnpj[1]}@${decOrg[1]}@${decOrg[2]}@A@${alterador[1]}@${programa}`);
+                worksheet.addRow([i, cnpj[1], decOrg[1], decOrg[2], "A", alterador[1], programa]);
+            } else if (prorrogador[0]) {
+                resultados.push(`#${i}@${cnpj[1]}@${decOrg[1]}@${decOrg[2]}@P@${prorrogador[1]}@${programa}`);
+                worksheet.addRow([i, cnpj[1], decOrg[1], decOrg[2], "P", prorrogador[1], programa]);
+            } else if (renovador[0]) {
+                resultados.push(`#${i}@${cnpj[1]}@${decOrg[1]}@${decOrg[2]}@R@${renovador[1]}@${programa}`);
+                worksheet.addRow([i, cnpj[1], decOrg[1], decOrg[2], "R", renovador[1], programa]);
+            } else {
+                resultados.push(`#${i}@${cnpj[1]}@${decOrg[1]}@${decOrg[2]}@C@${decOrg[1]}@${programa}`);
+                worksheet.addRow([i, cnpj[1], decOrg[1], decOrg[2], "C", decOrg[1], programa]);
+            }
+        } else if (alterador[0]) {
+            resultados.push(`#${i}@00.000.000/0000-00@${decOrg[1]}@${decOrg[2]}@A@${alterador[1]}@${programa}`);
+            worksheet.addRow([i, '00.000.000/0000-00', decOrg[1], decOrg[2], "A", alterador[1], programa]);
+        }
+    }
+
+
     if (multi) {
         console.log(chalk.bgRgb(105, 0, 255).bold("Modo de multiprocessamento"))
         const promises = ocorrencias.map(async (ocorrencia) => {
@@ -108,7 +116,7 @@ async function coletarDados(ocorrencias, multi = false) {
 
             const buscaNaPagina = await buscarNaPagina(page);
 
-            escreverArquivo(i, buscaNaPagina.cnpj, buscaNaPagina.decOrg, buscaNaPagina.alterador, buscaNaPagina.prorrogador, buscaNaPagina.renovador)
+            escreverArquivo(i, buscaNaPagina.cnpj, buscaNaPagina.decOrg, buscaNaPagina.alterador, buscaNaPagina.prorrogador, buscaNaPagina.renovador, buscaNaPagina.programa)
 
             // Fechar a página e o contexto após a conclusão
             await page.close();
@@ -143,7 +151,7 @@ async function coletarDados(ocorrencias, multi = false) {
 
             const buscaNaPagina = await buscarNaPagina(page);
 
-            escreverArquivo(i, buscaNaPagina.cnpj, buscaNaPagina.decOrg, buscaNaPagina.alterador, buscaNaPagina.prorrogador, buscaNaPagina.renovador)
+            escreverArquivo(i, buscaNaPagina.cnpj, buscaNaPagina.decOrg, buscaNaPagina.alterador, buscaNaPagina.prorrogador, buscaNaPagina.renovador, buscaNaPagina.programa)
 
             progressBar.update((((index - inicio) / total) * 100));
             progressBar.updateETA();

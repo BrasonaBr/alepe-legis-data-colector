@@ -59,9 +59,6 @@ function searchInFile(filePath, callback) {
             const maxNumber = Math.max(...numbers);
             const minNumber = Math.min(...numbers);
 
-            //console.log(chalk.yellow("Maior url: ", maxNumber))
-            //console.log(chalk.yellow("Menor url: ", minNumber))
-
             callback(occurrences);
         } else {
             console.log(chalk.red(`Texto não encontrado em ${filePath}`));

@@ -1,4 +1,5 @@
-import coletarTabela from "./coletarTabela.js"
+import main from "./etapa.js"
+import main2 from "./etapaProdutos.js";
 import chalk from "chalk";
 import { readFile } from 'fs/promises';
 import path from 'path';
@@ -22,6 +23,11 @@ function start() {
     let ano = null
     let multi = false
 
+    if(argumentosDoUsuario[0] === 'p'){
+        main2(argumentosDoUsuario[1].replace(/-/g, " "))
+        return 
+    }
+
     if (argumentosDoUsuario.length >= 0 && argumentosDoUsuario.length <= 3) {
         if (parseInt(argumentosDoUsuario[0]) <= 12) {
             mes = parseInt(argumentosDoUsuario[0])
@@ -40,7 +46,8 @@ function start() {
         if (argumentosDoUsuario[2] === 'm') {
             multi = true
         }
-        coletarTabela(mes, ano, multi)
+        main(mes, ano, multi)
+        //main2("produtos beneficiados")
     } 
 }
 
