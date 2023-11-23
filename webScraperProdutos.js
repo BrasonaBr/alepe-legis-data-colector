@@ -13,7 +13,7 @@ async function coletarProdutos(ocorrencias, palavraChave, multi, batchSize) {
     console.log(chalk.blue(`Número de decretos com produtos publicados: ${ocorrencias.length}`))
 
     const browser = await puppeteer.launch({
-        headless: false, //false// Definindo explicitamente o novo modo Headless
+        headless: 'new', //false// Definindo explicitamente o novo modo Headless
     });
 
     const page = await browser.newPage();

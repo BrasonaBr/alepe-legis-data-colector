@@ -10,7 +10,7 @@ async function pesquisaProdutos(delay = 1500, palavraChave, ano) {
     console.log(chalk.blue(`Termo buscado: ${palavraChave} \n`))
 
     const browser = await puppeteer.launch({
-        headless: false, //false// Definindo explicitamente o novo modo Headless
+        headless: 'new', //false// Definindo explicitamente o novo modo Headless
     });
 
     const page = await browser.newPage();
