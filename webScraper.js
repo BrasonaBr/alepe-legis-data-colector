@@ -191,7 +191,7 @@ async function coletarDados(ocorrencias, multi = false, batchSize = 15) {
         for (let index = 0; index < ocorrencias.length; index++) {
             const i = ocorrencias[(ocorrencias.length - 1) - index].nextNumber
 
-            await page.goto(`https://legis.alepe.pe.gov.br/texto.aspx?id=${i}&tipo=`);
+            await page.goto(`https://legis.alepe.pe.gov.br/texto.aspx?id=${i}&tipo=`, { timeout: 120000 });
 
             const buscaNaPagina = await buscarNaPagina(page);
 

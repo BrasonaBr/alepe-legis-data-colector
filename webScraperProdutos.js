@@ -110,7 +110,7 @@ async function coletarProdutos(ocorrencias, palavraChave, multi, batchSize) {
         const produtosArray = produtos[1].split(";");
         produtosArray[0] = produtosArray[0].replace(new RegExp('\\b' + palavraChave + ': \\b', 'g'), '');
         totalProdutos += (produtosArray.length - 1)
-        const produtosTxt = produtos[1].replace(/;/g, "*").replace(new RegExp('\\b' + palavraChave + ': \\b', 'g'), '');
+        const produtosTxt = produtos[1].replace(/;/g, "*").replace(new RegExp('\\b' + palavraChave + '\\b', 'g'), '');
 
         const linhaExcel = [i, decreto[1], decreto[2], decreto[3], ...produtosArray]
 
@@ -172,7 +172,7 @@ async function coletarProdutos(ocorrencias, palavraChave, multi, batchSize) {
         for (let index = 0; index < ocorrencias.length; index++) {
             const i = ocorrencias[(ocorrencias.length - 1) - index].nextNumber
 
-            await page.goto(`https://legis.alepe.pe.gov.br/texto.aspx?id=${i}&tipo=`);
+            await page.goto(`https://legis.alepe.pe.gov.br/texto.aspx?id=${i}&tipo=`, { timeout: 120000 });
 
             const buscaNaPagina = await buscarNaPagina(page, palavraChave);
 
