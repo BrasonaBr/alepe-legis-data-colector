@@ -21,9 +21,18 @@ function start() {
     let mes = null
     let ano = null
     let multi = false
+    let batchSize = 15
+    let palavraChave = null
 
     if(argumentosDoUsuario[0] === 'p'){
-        main(mes, ano, multi, argumentosDoUsuario[1].replace(/-/g, " "))
+        palavraChave = argumentosDoUsuario[1].replace(/-/g, " ")
+        main(mes, ano, multi, palavraChave, batchSize)
+        return 
+    } else if (argumentosDoUsuario[0] === 'mp'){
+        multi = true
+        palavraChave = argumentosDoUsuario[1].replace(/-/g, " ")
+        ano = argumentosDoUsuario[2]
+        main(mes, ano, multi, palavraChave, batchSize)
         return 
     }
 
@@ -45,7 +54,7 @@ function start() {
         if (argumentosDoUsuario[2] === 'm') {
             multi = true
         }
-        main(mes, ano, multi)
+        main(mes, ano, multi, batchSize)
     } 
 }
 

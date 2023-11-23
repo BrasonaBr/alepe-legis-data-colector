@@ -16,9 +16,21 @@ Parametros:
 
 npm start mes ano
 
-npm start p termo-de-busca 
+npm start p termo-de-busca ano
 
 exemplo "npm start p produtos-beneficiados"
+
+Multiprocessamento:
+
+npm start m
+
+npm start mes m
+
+npm start mes ano m
+
+npm start mp termo-de-busca
+
+npm start mp termo-de-busca ano
 
 comandos extras:
 npm install

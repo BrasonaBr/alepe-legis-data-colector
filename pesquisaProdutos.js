@@ -3,12 +3,14 @@ import * as fs from 'fs';
 import chalk from "chalk"
 import cliProgress from "cli-progress"
 
-let etapas = 0
+async function pesquisaProdutos(delay = 1500, palavraChave, ano) {
 
-async function pesquisaProdutos(delay = 1500, palavraChave) {
+    let anoAtual = ano
+
+    console.log(chalk.blue(`Termo buscado: ${palavraChave} \n`))
 
     const browser = await puppeteer.launch({
-        headless: 'new', //false// Definindo explicitamente o novo modo Headless
+        headless: false, //false// Definindo explicitamente o novo modo Headless
     });
 
     const page = await browser.newPage();
@@ -32,29 +34,44 @@ async function pesquisaProdutos(delay = 1500, palavraChave) {
 
     await page.click(decretoExecutivoInput);
 
-    await page.waitForTimeout(delay / 2);
-    etapas += delay / 2
+    await page.waitForTimeout(delay / 3);
+
+    if (ano) {
+        const linkSelectorPublicacao = 'li#li-publicacao a.li-pa';
+
+        await page.click(linkSelectorPublicacao);
+
+        await page.waitForTimeout(delay / 3);
+
+        const caixaDataSelectorInicio = 'input#tbxDataInicialPublicacao';
+
+        const caixaDataSelectorFim = 'input#tbxDataFinalPublicacao';
+
+        // Preencher a caixa de texto da data
+        await page.type(caixaDataSelectorInicio, `01/01/${anoAtual}`);
+        await page.waitForTimeout(delay / 3);
+
+        await page.type(caixaDataSelectorFim, `31/12/${anoAtual}`);
+        await page.waitForTimeout(delay / 3);
+    }
 
     const linkSelector = 'li#li-pesquisa a.li-pa';
 
     await page.click(linkSelector);
 
-    await page.waitForTimeout(delay / 2);
-    etapas += delay / 2
+    await page.waitForTimeout(delay / 3);
 
     const inputPalavraChave = "input#tbxTextoPesquisa"
 
     await page.type(inputPalavraChave, palavraChave);
 
-    await page.waitForTimeout(delay / 2);
-    etapas += delay / 2
+    await page.waitForTimeout(delay / 3);
 
     const botaoPesquisarSelector = 'input#btnPesquisar';
 
     await page.click(botaoPesquisarSelector);
 
-    await page.waitForTimeout(delay * 5);
-    etapas += delay * 5
+    await page.waitForTimeout(delay * 2);
 
     // Obter o texto do elemento <p>
     const quantidadeResultadosSelector = 'p span #lblQtd';
@@ -67,8 +84,7 @@ async function pesquisaProdutos(delay = 1500, palavraChave) {
 
     await page.select(itensPaginaSelector, '200');
 
-    await page.waitForTimeout(delay * 5);
-    etapas += delay * 5
+    await page.waitForTimeout(delay * 3);
 
     async function coletarHTML() {
         return await page.evaluate(() => {
@@ -98,35 +114,39 @@ async function pesquisaProdutos(delay = 1500, palavraChave) {
     const intevalos = Math.ceil(numPaginas / 5)
     const elementosUltimoIntervalo = numPaginas % 5
 
-    await page.waitForTimeout(delay * 5);
+    await page.waitForTimeout(delay * 2);
 
     let doidice = true
     let paginaAtual = 0
 
-    for (let i = 0; i < intevalos; i++) {
-        for (let j = 1; j <= 5; j++) {
-            paginaAtual++
+    if (numPaginas === 1) {
+        await addHTML(paginaAtual)
+        progressBar.update(100);
+    } else {
+        for (let i = 0; i < intevalos; i++) {
+            for (let j = 1; j <= 5; j++) {
+                paginaAtual++
 
-            if (i === intevalos - 1 && doidice) {
-                if (elementosUltimoIntervalo !== 0) {
-                    clicarBotaoPag(6 - elementosUltimoIntervalo)
-                    doidice = false
-                    paginaAtual--
-                }
-            } else if (paginaAtual <= numPaginas) {
-                etapas += delay * 5
-                progressBar.update((((paginaAtual) / numPaginas) * 100));
-                await addHTML(paginaAtual)
+                if (i === intevalos - 1 && doidice && intevalos > 1) {
+                    if (elementosUltimoIntervalo !== 0) {
+                        clicarBotaoPag(6 - elementosUltimoIntervalo)
+                        doidice = false
+                        paginaAtual--
+                    }
+                } else if (paginaAtual <= numPaginas) {
+                    progressBar.update((((paginaAtual) / numPaginas) * 100));
+                    await addHTML(paginaAtual)
 
-                if (paginaAtual < numPaginas) {
-                    if (j < 5) {
-                        clicarBotaoPag(j + 1)
-                    } else if (j === 5) {
-                        clicarProxIntervalo()
+                    if (paginaAtual < numPaginas) {
+                        if (j < 5) {
+                            clicarBotaoPag(j + 1)
+                        } else if (j === 5) {
+                            clicarProxIntervalo()
+                        }
                     }
                 }
+                await page.waitForTimeout(delay * 5);
             }
-            await page.waitForTimeout(delay * 5);
         }
     }
 
@@ -138,7 +158,5 @@ async function pesquisaProdutos(delay = 1500, palavraChave) {
     // Feche o navegador
     await browser.close();
 }
-
-//pesquisaProdutos("produtos beneficiados")
 
 export default pesquisaProdutos

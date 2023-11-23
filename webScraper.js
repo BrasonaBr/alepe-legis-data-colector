@@ -8,9 +8,7 @@ const workbook = new ExcelJS.Workbook();
 const worksheet = workbook.addWorksheet('Plan 1');
 
 async function coletarDados(ocorrencias, multi = false, batchSize = 15) {
-    const inicio = 0
-    const fim = ocorrencias.length - 1
-    const total = fim - inicio
+    const total = ocorrencias.length - 1
 
     console.log(chalk.blue(`Número de decretos publicados: ${ocorrencias.length}`))
 
@@ -176,7 +174,7 @@ async function coletarDados(ocorrencias, multi = false, batchSize = 15) {
             await Promise.all(batchPromises.map((promise, index) =>
                 promise.then(() => {
                     progressoBarra++;
-                    progressBar.update((((progressoBarra - inicio) / total) * 100));
+                    progressBar.update((((progressoBarra) / total) * 100));
                     progressBar.updateETA();
                 }).catch(error => {
                     console.error(`Promessa ${batchStart + index} falhou:`, error);
@@ -199,7 +197,7 @@ async function coletarDados(ocorrencias, multi = false, batchSize = 15) {
 
             escreverArquivo(i, buscaNaPagina.cnpj, buscaNaPagina.decOrg, buscaNaPagina.alterador, buscaNaPagina.prorrogador, buscaNaPagina.renovador, buscaNaPagina.programa)
 
-            progressBar.update((((index - inicio) / total) * 100));
+            progressBar.update((((index) / total) * 100));
             progressBar.updateETA();
         }
         progressBar.stop();

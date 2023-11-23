@@ -9,7 +9,7 @@ import coletarProdutos from "./webScraperProdutos.js"
 const filePath = './internal_table.txt';
 
 
-async function main(mes = null, ano = null, multi = false, palavraChave) {
+async function main(mes = null, ano = null, multi = false, palavraChave, batchSize = 15) {
 
     const maxTentativas = 3
     let tentativa = 0
@@ -22,17 +22,17 @@ async function main(mes = null, ano = null, multi = false, palavraChave) {
     while (tentativa < maxTentativas) {
         try {
             if (palavraChave) {
-                await pesquisaProdutos(delay, palavraChave)
+                await pesquisaProdutos(delay, palavraChave, ano)
                 // Chama a função de busca
                 searchInFile(filePath, (result) => {
-                    coletarProdutos(result, palavraChave);
+                    coletarProdutos(result, palavraChave, multi, batchSize);
                 });
                 break
             } else {
                 await realizarPesquisa(delay, mes, ano)
                 // Chama a função de busca
                 searchInFile(filePath, (result) => {
-                    coletarDados(result, multi);
+                    coletarDados(result, multi, batchSize);
                 });
                 break
             }
