@@ -65,8 +65,11 @@ async function coletarProdutos(ocorrencias, palavraChave) {
         }, palavras);
     }
 
+    var totalProdutos = 0
+
     function escreverArquivo(i, decreto, produtos) {
         const produtosArray = produtos[1].split(";");
+        totalProdutos += (produtosArray.length - 1)
         const produtosTxt = produtos[1].replace(/;/g, "*");
 
         const linhaExcel = [i, decreto[1], decreto[2], decreto[3], ...produtosArray]
@@ -92,11 +95,14 @@ async function coletarProdutos(ocorrencias, palavraChave) {
         progressBar.update((((index - inicio) / total) * 100));
         progressBar.updateETA();
     }
+
     progressBar.stop();
 
     await browser.close();
 
     console.log(chalk.blue(`Número de decretos Prodepe com produtos: ${resultados.length - 1}`))
+
+    console.log(chalk.blue("Número de produtos encontrados: " + totalProdutos))
 
     try {
         await fs.writeFile('resultadoTexto.txt', resultados.join('\n'));

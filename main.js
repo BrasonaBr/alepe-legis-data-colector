@@ -1,5 +1,4 @@
 import main from "./etapa.js"
-import main2 from "./etapaProdutos.js";
 import chalk from "chalk";
 import { readFile } from 'fs/promises';
 import path from 'path';
@@ -24,7 +23,7 @@ function start() {
     let multi = false
 
     if(argumentosDoUsuario[0] === 'p'){
-        main2(argumentosDoUsuario[1].replace(/-/g, " "))
+        main(mes, ano, multi, argumentosDoUsuario[1].replace(/-/g, " "))
         return 
     }
 
@@ -47,7 +46,6 @@ function start() {
             multi = true
         }
         main(mes, ano, multi)
-        //main2("produtos beneficiados")
     } 
 }
 

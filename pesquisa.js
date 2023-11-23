@@ -37,7 +37,7 @@ async function realizarPesquisa(delay = 1000, mes = null, ano = null) {
     // Data que você deseja inserir
     const dataDesejadaFim = `${dia}/${mes}/${ano}`; // Substitua pela data que você deseja
 
-    console.log(chalk.blue("Data final:", dataDesejadaFim))
+    console.log(chalk.blue("Data final:", dataDesejadaFim) + '\n')
 
     const browser = await puppeteer.launch({
         headless: 'new', //false// Definindo explicitamente o novo modo Headless

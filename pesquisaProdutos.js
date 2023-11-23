@@ -5,7 +5,7 @@ import cliProgress from "cli-progress"
 
 let etapas = 0
 
-async function pesquisaProdutos(delay = 1200, palavraChave) {
+async function pesquisaProdutos(delay = 1500, palavraChave) {
 
     const browser = await puppeteer.launch({
         headless: 'new', //false// Definindo explicitamente o novo modo Headless
@@ -126,7 +126,6 @@ async function pesquisaProdutos(delay = 1200, palavraChave) {
                         }
                     }
                 }
-
                 await page.waitForTimeout(delay * 5);
             }
         }
